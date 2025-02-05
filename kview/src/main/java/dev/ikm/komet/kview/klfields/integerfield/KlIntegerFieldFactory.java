@@ -9,7 +9,7 @@ import dev.ikm.komet.layout.component.version.field.KlIntegerField;
 public class KlIntegerFieldFactory implements KlFieldFactory<Integer> {
 
     @Override
-    public KlField<Integer> create(ObservableField<Integer> observableField, ObservableView observableView, boolean editable) {
+    public DefaultKlIntegerField create(ObservableField<Integer> observableField, ObservableView observableView, boolean editable) {
         return new DefaultKlIntegerField(observableField, observableView, editable);
     }
 

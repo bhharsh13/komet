@@ -28,6 +28,7 @@ public class PropertyPanelEvent extends Evt {
     /* EVENT */
     public static final EvtType<PropertyPanelEvent> SHOW_PANEL = new EvtType<>(Evt.ANY, "SHOW_PANEL");
     public static final EvtType<PropertyPanelEvent> SHOW_EDIT_SEMANTIC_FIELDS = new EvtType<>(SHOW_PANEL, "SHOW_EDIT_SEMANTIC_FIELDS");
+    public static final EvtType<PropertyPanelEvent> SHOW_EDIT_ONE_SEMANTIC_FIELD = new EvtType<>(SHOW_PANEL, "SHOW_EDIT_ONE_SEMANTIC_FIELD");
     public static final EvtType<PropertyPanelEvent> CONFIRMATION_PANEL = new EvtType<>(SHOW_PANEL, "CONFIRMATION_PANEL");
 
     /*** private variables ***/
