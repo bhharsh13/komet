@@ -40,6 +40,7 @@ import dev.ikm.tinkar.entity.StampRecord;
 import dev.ikm.tinkar.entity.transaction.CommitTransactionTask;
 import dev.ikm.tinkar.entity.transaction.Transaction;
 import dev.ikm.tinkar.terms.EntityFacade;
+import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -80,12 +81,23 @@ public class SemanticFieldsController {
 
     private List<Node> nodes = new ArrayList<>();
 
+    private boolean updateStampVersions;
+
+    private ChangeListener fieldPropertyChangeListner  = (obs, oldValue, newValue) -> {
+        // This flag is used to avoid unnecessary calling for
+        // method when value for other listeners is updated.
+        // It is similar to refreshProperty in Observable interface.
+        if(updateStampVersions){
+            updateStampVersionsNidsForAllFields();
+        }
+    };
+
     @FXML
     private void initialize() {
         // clear all semantic details.
         editFieldsVBox.setSpacing(8.0);
         editFieldsVBox.getChildren().clear();
-
+        updateStampVersions = true;
         EntityFacade semantic = semanticFieldsViewModel.getPropertyValue(SEMANTIC);
         if (semantic != null) {
             StampCalculator stampCalculator = getViewProperties().calculator().stampCalculator();
@@ -98,6 +110,8 @@ public class SemanticFieldsController {
                                 nodes,
                                 semanticEntityVersionLatest, true));
                 editFieldsVBox.getChildren().clear();
+                //Add listener for fieldProperty of each field to check when data is modified.
+                observableFields.forEach(observableField -> observableField.fieldProperty().addListener(fieldPropertyChangeListner));
             } else {
                 // TODO Add a new semantic based on a pattern (blank fields).
             }
@@ -124,6 +138,26 @@ public class SemanticFieldsController {
                 }
             }
         });
+    }
+
+    /***
+     * This method updates stamps for all the fields to avoid contradictions.
+     * An alternate approach could be to use Semantic contradictions
+     * for each field and pick up the latest value for each contradiction?
+     */
+    private void updateStampVersionsNidsForAllFields() {
+        EntityFacade semantic = semanticFieldsViewModel.getPropertyValue(SEMANTIC);
+        StampCalculator stampCalculator = getViewProperties().calculator().stampCalculator();
+        Latest<SemanticEntityVersion> semanticEntityVersionLatest = stampCalculator.latest(semantic.nid());
+        updateStampVersions = false;
+        semanticEntityVersionLatest.ifPresent(ver -> {
+            int latestStampNid = ver.stamp().nid();
+            observableFields.forEach(observableField -> {
+                //Update the stampNid with the latest stamp nid value.
+                observableField.fieldProperty().set(observableField.field().withVersionStampNid(latestStampNid));
+            });
+        });
+        updateStampVersions = true;
     }
 
     private static Separator createSeparator() {
@@ -154,57 +188,21 @@ public class SemanticFieldsController {
         //create new list for passing to the event.
         List<ObservableField<?>> list = new ArrayList<>(observableFields);
 
-        Transaction transaction = writeToTempTranscation();
-        if(transaction != null){
-            commitTransactionTask(transaction);
-        }
-
         //Get the semantic need to pass along with event for loading values across Opened Semantics.
         EntityFacade semantic = semanticFieldsViewModel.getPropertyValue(SEMANTIC);
+        StampCalculator stampCalculator = getViewProperties().calculator().stampCalculator();
+        Latest<SemanticEntityVersion> semanticEntityVersionLatest = stampCalculator.latest(semantic.nid());
+        semanticEntityVersionLatest.ifPresent(semanticEntityVersion -> {
+            StampRecord stamp = Entity.getStamp(semanticEntityVersion.stampNid());
+            SemanticVersionRecord version = Entity.getVersionFast(semantic.nid(), stamp.nid());
+            Transaction.forVersion(version).ifPresent(transaction -> {
+                commitTransactionTask(transaction);
+            });
+        });
+
         //EventBus implementation changes to refresh the details area
         EvtBusFactory.getDefaultEvtBus().publish(semanticFieldsViewModel.getPropertyValue(CURRENT_JOURNAL_WINDOW_TOPIC), new GenEditingEvent(actionEvent.getSource(), PUBLISH, list, semantic.nid()));
 
-    }
-
-    /**  This method is used to create and return transaction instance when records are modified.
-     *
-     * @return transaction
-     */
-    private Transaction writeToTempTranscation() {
-        EntityFacade semantic = semanticFieldsViewModel.getPropertyValue(SEMANTIC);
-        SemanticRecord semanticRecord =  Entity.getFast(semantic.nid());
-        AtomicReference<Transaction> transactionAtomicReference = new AtomicReference<>();
-        StampCalculator stampCalculator = getViewProperties().calculator().stampCalculator();
-        Latest<SemanticEntityVersion> semanticEntityVersionLatest = stampCalculator.latest(semantic.nid());
-        semanticEntityVersionLatest.ifPresent(semanticEntityVersion ->{
-            StampRecord stamp = Entity.getStamp(semanticEntityVersion.stampNid());
-            SemanticVersionRecord version = Entity.getVersionFast(semantic.nid(), stamp.nid());
-            MutableList fieldsForNewVersion = Lists.mutable.of(version.fieldValues().toArray());
-            observableFields.forEach(of -> {
-                fieldsForNewVersion.set(of.fieldIndex(), of.value());
-            });
-            SemanticVersionRecord newVersion =null;
-            if(stamp.lastVersion().committed()){
-                // Create transaction
-                transactionAtomicReference.set(Transaction.make());
-                // newStamp already written to the entity store.
-                StampEntity newStamp = transactionAtomicReference.get().getStampForEntities(stamp.state(), stamp.authorNid(), stamp.moduleNid(), stamp.pathNid(), version.entity());
-                // Create new version...
-                newVersion = version.with().fieldValues(fieldsForNewVersion.toImmutable()).stampNid(newStamp.nid()).build();
-
-            }else {
-                newVersion = version.withFieldValues(fieldsForNewVersion.toImmutable());
-                // if a version with the same stamp as newVersion exists, that version will be removed
-            }
-
-            if(newVersion != null){
-                // prior to adding the new version so you don't get duplicate versions with the same stamp.
-                SemanticRecord analogue = semanticRecord.with(newVersion).build();
-                // Entity provider will broadcast the nid of the changed entity.
-                Entity.provider().putEntity(analogue);
-            }
-        });
-        return transactionAtomicReference.get();
     }
 
     private static void commitTransactionTask(Transaction transaction) {
