@@ -414,14 +414,14 @@ public class JournalController {
         });
 
         workspace.addEventHandler(MouseEvent.MOUSE_CLICKED, this::onMouseClickedOnDesktopSurfacePane);
-        refreshCalculatorEventSubscriber = evt -> {
-            LOG.info("Refresh Calculator Event");
-            if(evt.getEventType() == GLOBAL_REFRESH) {
-                LOG.info("Global Refresh EventYpe...");
-                CachingService.clearAll();
-            }
-        };
-        journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
+//        refreshCalculatorEventSubscriber = evt -> {
+//            LOG.info("Refresh Calculator Event");
+//            if(evt.getEventType() == GLOBAL_REFRESH) {
+//                LOG.info("Global Refresh EventYpe...");
+//                CachingService.clearAll();
+//            }
+//        };
+//        journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
 
     }
 
@@ -647,6 +647,14 @@ public class JournalController {
 
                     // Show the progress popup immediately for this new task
                     progressNotificationPopup.show(progressToggleButton, this::supplyProgressPopupAnchorPoint);
+                    refreshCalculatorEventSubscriber = event -> {
+                        LOG.info("Refresh Calculator Event");
+                        if(event.getEventType() == GLOBAL_REFRESH) {
+                            LOG.info("Global Refresh Eventype...");
+                            CachingService.clearAll();
+                        }
+                    };
+                    journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
                 });
             }
         };
@@ -690,6 +698,7 @@ public class JournalController {
                         .setPropertyValue(CANCEL_BUTTON_TEXT_PROP, cancelButtonText))
                 );
 
+        System.out.println("----------- Invoking FXMLMvvmLoader.make(config) -----------");
         JFXNode<Pane, ProgressController> progressJFXNode = FXMLMvvmLoader.make(config);
         return progressJFXNode;
     }

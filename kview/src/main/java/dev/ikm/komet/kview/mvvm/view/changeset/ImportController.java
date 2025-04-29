@@ -204,10 +204,14 @@ public class ImportController {
      */
     @FXML
     void handleImportButtonEvent(ActionEvent event) {
+        System.out.println("Step 1 : --------User Clicked Import button--------------");
         if (importViewModel.validProperty().get()) {
             File selectedFile = importViewModel.getPropertyValue(SELECTED_FILE);
+            System.out.println("Step 2 : --------User Selected File --------------");
             LoadEntitiesFromProtobufFile loadEntities = new LoadEntitiesFromProtobufFile(selectedFile);
+            System.out.println("Step 3 : --------LoadEntitiesFromProtobufFile for Selected File --------------");
             ProgressHelper.progress(loadEntities, "Cancel Import");
+            System.out.println("Step 4 : --------Invoke ProgressHelper.progress for the loadEntities--------------");
             closeDialog();
             LOG.info("Importing dataset from file: {}", selectedFile);
         }
