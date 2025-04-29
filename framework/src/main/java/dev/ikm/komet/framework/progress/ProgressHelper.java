@@ -56,6 +56,7 @@ public class ProgressHelper {
         EvtBusFactory
                 .getDefaultEvtBus()
                 .publish(PROGRESS_TOPIC, new ProgressEvent(task, ProgressEvent.SUMMON, task, cancelButtonText));
+        System.out.println("------------Publising the Event-------");
         return (Future<T>) TinkExecutor.threadPool().submit(task);
     }
 

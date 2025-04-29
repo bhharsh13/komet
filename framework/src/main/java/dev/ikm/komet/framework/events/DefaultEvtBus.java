@@ -72,6 +72,8 @@ public class DefaultEvtBus implements EvtBus {
             subscribersMap.get(topic).putIfAbsent(eventClass.getName(), subscribers);
         } else {
             subscribers.add(subscriber);
+            System.out.println("----------------Event topic is subscribed here---------------");
+
         }
     }
 

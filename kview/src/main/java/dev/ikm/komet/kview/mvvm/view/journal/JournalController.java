@@ -582,7 +582,9 @@ public class JournalController {
         // Subscribe to progress events on the event bus
         Subscriber<ProgressEvent> progressPopupSubscriber = evt -> {
             // if SUMMON event type, load stuff and reference task to progress popup
+            System.out.println("---------------evt.getEventType()--------- :"+evt.getEventType());
             if (evt.getEventType() == SUMMON) {
+                System.out.println("---------------Event triggerred---------");
                 Platform.runLater(() -> {
                     // Make the toggle button visible so users can open the popover
                     progressToggleButton.setVisible(true);
@@ -642,22 +644,25 @@ public class JournalController {
                         }
                     });
 
+                    refreshCalculatorEventSubscriber = event -> {
+                        LOG.info("Refresh Calculator Event ****************");
+                        if(event.getEventType() == GLOBAL_REFRESH) {
+                            LOG.info("Global Refresh Eventype... ************");
+                            CachingService.clearAll();
+                        }
+                    };
+                    journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
+
                     // Add the progress UI to the popup's vertical container
                     progressPopupPane.getChildren().add(progressPane);
 
                     // Show the progress popup immediately for this new task
                     progressNotificationPopup.show(progressToggleButton, this::supplyProgressPopupAnchorPoint);
-                    refreshCalculatorEventSubscriber = event -> {
-                        LOG.info("Refresh Calculator Event");
-                        if(event.getEventType() == GLOBAL_REFRESH) {
-                            LOG.info("Global Refresh Eventype...");
-                            CachingService.clearAll();
-                        }
-                    };
-                    journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
-                });
+             });
+
             }
         };
+
         journalEventBus.subscribe(PROGRESS_TOPIC, ProgressEvent.class, progressPopupSubscriber);
     }
 
