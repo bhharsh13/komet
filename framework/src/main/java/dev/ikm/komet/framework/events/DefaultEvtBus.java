@@ -48,6 +48,7 @@ public class DefaultEvtBus implements EvtBus {
         LOG.info(evt.getSource().toString());
         // event class name is the key -> List<Subscriber>
         String eventClassName = evt.getClass().getName();
+        System.out.println("-------------Event published for +"+topic+"------------ event name:"+eventClassName);
         subscribersMap.putIfAbsent(topic, new HashMap<>());
         Map<String, List<Subscriber>> eventNameAndSubscribers = subscribersMap.get(topic);
         eventNameAndSubscribers.putIfAbsent(eventClassName, new ArrayList<>());
@@ -72,7 +73,7 @@ public class DefaultEvtBus implements EvtBus {
             subscribersMap.get(topic).putIfAbsent(eventClass.getName(), subscribers);
         } else {
             subscribers.add(subscriber);
-            System.out.println("----------------Event topic is subscribed here---------------");
+            System.out.println("----------------Event topic received-------------- "+eventClass.getTypeName());
 
         }
     }
