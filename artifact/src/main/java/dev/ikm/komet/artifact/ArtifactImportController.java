@@ -20,6 +20,7 @@ import dev.ikm.komet.framework.concurrent.TaskWrapper;
 import dev.ikm.komet.framework.events.EvtBusFactory;
 import dev.ikm.komet.framework.events.appevents.RefreshCalculatorCacheEvent;
 import dev.ikm.komet.framework.progress.ProgressHelper;
+import dev.ikm.tinkar.entity.EntityCountSummary;
 import dev.ikm.tinkar.entity.load.LoadEntitiesFromProtobufFile;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -113,15 +114,7 @@ public class ArtifactImportController {
 
         importProgressBar.progressProperty().unbind();
         importProgressBar.progressProperty().bind(importTask.progressProperty());
-
-        Future future =  ProgressHelper.progress(importTask, "Cancel Import");
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        EvtBusFactory.getDefaultEvtBus().publish(CALCULATOR_CACHE_TOPIC, new RefreshCalculatorCacheEvent(future, GLOBAL_REFRESH));
-
+        ProgressHelper.progress(importTask, "Cancel Import");
     }
 
     @FXML

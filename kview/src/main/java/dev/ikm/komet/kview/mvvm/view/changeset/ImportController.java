@@ -16,9 +16,12 @@
 package dev.ikm.komet.kview.mvvm.view.changeset;
 
 import com.jpro.webapi.WebAPI;
+import dev.ikm.komet.framework.events.EvtBusFactory;
+import dev.ikm.komet.framework.events.appevents.RefreshCalculatorCacheEvent;
 import dev.ikm.komet.framework.progress.ProgressHelper;
 import dev.ikm.komet.kview.mvvm.viewmodel.ImportViewModel;
 import dev.ikm.tinkar.common.alert.AlertStreams;
+import dev.ikm.tinkar.entity.EntityCountSummary;
 import dev.ikm.tinkar.entity.load.LoadEntitiesFromProtobufFile;
 import javafx.application.Platform;
 import javafx.css.PseudoClass;
@@ -41,7 +44,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.Future;
 
+import static dev.ikm.komet.framework.events.FrameworkTopics.CALCULATOR_CACHE_TOPIC;
+import static dev.ikm.komet.framework.events.appevents.RefreshCalculatorCacheEvent.GLOBAL_REFRESH;
 import static dev.ikm.komet.kview.mvvm.viewmodel.ImportViewModel.ImportField.SELECTED_FILE;
 
 /**
@@ -206,12 +212,21 @@ public class ImportController {
     void handleImportButtonEvent(ActionEvent event) {
         System.out.println("Step 1 : --------User Clicked Import button--------------");
         if (importViewModel.validProperty().get()) {
-            File selectedFile = importViewModel.getPropertyValue(SELECTED_FILE);
             System.out.println("Step 2 : --------User Selected File --------------");
-            LoadEntitiesFromProtobufFile loadEntities = new LoadEntitiesFromProtobufFile(selectedFile);
+            File selectedFile = importViewModel.getPropertyValue(SELECTED_FILE);
             System.out.println("Step 3 : --------LoadEntitiesFromProtobufFile for Selected File --------------");
-            ProgressHelper.progress(loadEntities, "Cancel Import");
+            LoadEntitiesFromProtobufFile loadEntities = new LoadEntitiesFromProtobufFile(selectedFile){
+                public EntityCountSummary compute() {
+                    EntityCountSummary summary = super.compute();
+                    EvtBusFactory.getDefaultEvtBus().publish(CALCULATOR_CACHE_TOPIC, new RefreshCalculatorCacheEvent(event.getSource(), GLOBAL_REFRESH));
+                    System.out.println("--------------Publising the event GLOBAL_REFRESH -------------"+event.getSource());
+                    return summary;
+                }
+            };
             System.out.println("Step 4 : --------Invoke ProgressHelper.progress for the loadEntities--------------");
+            Future future = ProgressHelper.progress(loadEntities, "Cancel Import");
+            EvtBusFactory.getDefaultEvtBus().publish(CALCULATOR_CACHE_TOPIC, new RefreshCalculatorCacheEvent(future, GLOBAL_REFRESH));
+           // System.out.println("-------Finished import and Ready to publish Event Topic ["+event.getEventType()+"] Event Type ["+event.getSource().toString()+"]");
             closeDialog();
             LOG.info("Importing dataset from file: {}", selectedFile);
         }

@@ -414,14 +414,14 @@ public class JournalController {
         });
 
         workspace.addEventHandler(MouseEvent.MOUSE_CLICKED, this::onMouseClickedOnDesktopSurfacePane);
-//        refreshCalculatorEventSubscriber = evt -> {
-//            LOG.info("Refresh Calculator Event");
-//            if(evt.getEventType() == GLOBAL_REFRESH) {
-//                LOG.info("Global Refresh EventYpe...");
-//                CachingService.clearAll();
-//            }
-//        };
-//        journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
+        refreshCalculatorEventSubscriber = evt -> {
+            LOG.info("Refresh Calculator Event");
+            if(evt.getEventType() == GLOBAL_REFRESH) {
+                LOG.info("Global Refresh Eventype -- "+evt.getEventType());
+                CachingService.clearAll();
+            }
+        };
+        journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
 
     }
 
@@ -643,15 +643,6 @@ public class JournalController {
                             progressNotificationPopup.hide();
                         }
                     });
-
-                    refreshCalculatorEventSubscriber = event -> {
-                        LOG.info("Refresh Calculator Event ****************");
-                        if(event.getEventType() == GLOBAL_REFRESH) {
-                            LOG.info("Global Refresh Eventype... ************");
-                            CachingService.clearAll();
-                        }
-                    };
-                    journalEventBus.subscribe(CALCULATOR_CACHE_TOPIC, RefreshCalculatorCacheEvent.class, refreshCalculatorEventSubscriber);
 
                     // Add the progress UI to the popup's vertical container
                     progressPopupPane.getChildren().add(progressPane);
