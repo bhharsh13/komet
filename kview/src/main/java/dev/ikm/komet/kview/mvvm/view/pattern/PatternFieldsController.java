@@ -49,6 +49,7 @@ import dev.ikm.tinkar.entity.ConceptEntity;
 import dev.ikm.tinkar.entity.Entity;
 import dev.ikm.tinkar.terms.EntityFacade;
 import dev.ikm.tinkar.terms.EntityProxy;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
@@ -99,6 +100,9 @@ public class PatternFieldsController {
             patternFieldsViewModel.validate();
             patternFieldsViewModel.setPropertyValue(IS_INVALID, patternFieldsViewModel.hasErrorMsgs());
         };
+        // Set up bindings after ViewModel is assigned
+        fieldOrderComboBox.disableProperty().bind(patternFieldsViewModel.disableFieldOrderAndDataTypeProperty());
+        dataTypeComboBox.disableProperty().bind(patternFieldsViewModel.disableFieldOrderAndDataTypeProperty());
 
         addEditLabel.textProperty().bind(patternFieldsViewModel.getProperty(ADD_EDIT_LABEL));
 
@@ -237,6 +241,8 @@ public class PatternFieldsController {
         patternFieldsViewModel.setPropertyValue(PREVIOUS_PATTERN_FIELD, null);
         patternFieldsViewModel.setPropertyValue(PURPOSE_ENTITY, null);
         patternFieldsViewModel.setPropertyValue(MEANING_ENTITY, null);
+        patternFieldsViewModel.setPatternHasBeenPublished(false);
+        patternFieldsViewModel.setDisableFieldOrderAndDataType(false);
         patternFieldsViewModel.save(true);
     }
 
